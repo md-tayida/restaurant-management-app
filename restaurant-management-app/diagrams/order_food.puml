@@ -1,0 +1,52 @@
+@startuml
+actor OrderTaker as ot
+actor KitchenStaff as ks
+actor Waitress as w
+actor Cashier as c
+participant OrderService
+participant OrderItemService
+participant TableInfoService
+participant KitchenService
+participant PaymentService
+database DB
+
+
+ot -> OrderService: พนักงานสร้างออเดอร์ใหม่
+OrderService -> TableInfoService: ปลี่ยนสถานะโต๊ะเป็น "OCCUPIED"
+TableInfoService -> DB: บันทึกสถานะโต๊ะ
+OrderService -> DB: บันทึกข้อมูลออเดอร์และรายการอาหาร
+
+
+ks -> KitchenService: ดูเมนูที่ต้องทำในครัวตามแผนก
+KitchenService -> OrderItemService: ค้นหารายการอาหารที่ยังอยู่ในสถานะ "PREPARING"
+OrderItemService -> DB: ดึงรายการจากฐานข้อมูล
+KitchenService --> ks: ส่งรายการอาหารที่ต้องทำ
+
+
+ks -> KitchenService: กดว่าเมนูนี้เตรียมเสร็จแล้ว เปลี่ยนสถานะรายการอาหารเป็น "READY_TO_SERVE"
+KitchenService -> DB: อัปเดตสถานะในฐานข้อมูล
+
+w -> OrderItemService: กดว่าเมนูนี้เสิร์ฟเรียบร้อย เปลี่ยนสถานะรายการอาหารเป็น "DONE"
+OrderItemService -> DB: อัปเดตสถานะในฐานข้อมูล
+
+
+c -> PaymentService: พนักงานดำเนินการชำระเงินโต๊ะ
+PaymentService -> TableInfoService: ดึงข้อมูลโต๊ะ
+TableInfoService -> DB: อ่านข้อมูลโต๊ะและออเดอร์ที่เกี่ยวข้อง
+
+PaymentService -> OrderService: ตรวจสอบรายการออเดอร์ที่ยังไม่จ่ายเงิน
+OrderService -> DB: ดึงเฉพาะออเดอร์ที่สถานะ "AVAILABLE"
+'   ใช้คำผิด
+
+alt ยังมีรายกาอาหารที่อยู่สถาน "PREPARING" or "READY_TO_SERVE"
+    PaymentService --> c: "ไม่สามารถชำระเงินได้"
+else
+    PaymentService -> DB: สร้างข้อมูลการชำระเงินใหม่
+    PaymentService -> OrderService: เปลี่ยนสถานะออเดอร์เป็น "จ่ายแล้ว"
+    OrderService -> DB: บันทึกออเดอร์ใหม่
+    PaymentService -> TableInfoService: เปลี่ยนสถานะโต๊ะกลับเป็น "ว่าง"
+    TableInfoService -> DB: อัปเดตสถานะโต๊ะ
+    PaymentService --> c: แจ้งว่าชำระเงินสำเร็จ
+end
+
+@enduml

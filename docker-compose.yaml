@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_DB: restaurant_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 097968 # แก้ให้ตรงกับ backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d/
+
+  backend:
+    build: ./restaurant-management-app
+    image: mybackend
+    container_name: backend-service
+    ports:
+    - "8090:8090"
+    depends_on:
+    - db
+    volumes:
+    - ./config:/application/config
+    environment:
+    - SPRING_CONFIG_LOCATION=classpath:/,file:/application/config/
+
+
+  
+
+  frontend:
+    build: ./frontend-restaurant
+    image: my-react-app
+    container_name: react-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
