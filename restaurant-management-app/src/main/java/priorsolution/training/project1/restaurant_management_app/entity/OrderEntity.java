@@ -26,7 +26,9 @@ public class OrderEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;// LocalDateTime.now();
     @NotNull
     @Enumerated(EnumType.STRING)
     private OrderTypeEnum orderType;// DINE_IN, TAKEAWAY
@@ -42,9 +44,7 @@ public class OrderEntity {
 
     // PAID, CANCELED
 
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime createdAt;// LocalDateTime.now();
+
 
     @DecimalMin(value = "0.0", inclusive = true)
     @Column(name = "total_price")

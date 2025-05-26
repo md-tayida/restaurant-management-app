@@ -1,6 +1,5 @@
 package priorsolution.training.project1.restaurant_management_app.exception;
 
-import lombok.Data;
 import lombok.Getter;
 
 

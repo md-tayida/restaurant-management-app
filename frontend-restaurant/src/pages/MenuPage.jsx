@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import MenuCard from '../components/MenuCard';
 import OrderSidebar from '../components/OrderSidebar';
 import { fetchMenus } from '../api/menuApi';
 import { postOrder } from '../api/orderApi';
+import axios from 'axios';
 
 const MenuPage = () => {
-    const location = useLocation();
     const navigate = useNavigate();
-    const orderType = location.state?.orderType;
 
+    const [orderType, setOrderType] = useState('DINE_IN');
     const [tableId, setTableId] = useState('');
+    const [tables, setTables] = useState([]);
     const [menuByCategory, setMenuByCategory] = useState({});
     const [selectedItems, setSelectedItems] = useState([]);
     const [orderSent, setOrderSent] = useState(false);
@@ -19,11 +20,6 @@ const MenuPage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!orderType) {
-            navigate('/order-type');
-            return;
-        }
-
         const loadMenus = async () => {
             try {
                 setLoading(true);
@@ -43,11 +39,42 @@ const MenuPage = () => {
             }
         };
 
+        const loadTables = async () => {
+            try {
+                const res = await axios.get('http://localhost:8090/api/tables');
+                setTables(res.data);
+            } catch (err) {
+                console.error('โหลดโต๊ะล้มเหลว');
+            }
+        };
+
         loadMenus();
-    }, [orderType, navigate]);
+        loadTables();
+    }, [navigate]);
 
     const handleAddItem = (menu) => {
-        setSelectedItems([...selectedItems, menu]);
+        const index = selectedItems.findIndex(item => item.id === menu.id);
+        if (index !== -1) {
+            const updatedItems = [...selectedItems];
+            updatedItems[index].quantity += 1;
+            setSelectedItems(updatedItems);
+        } else {
+            setSelectedItems([...selectedItems, { ...menu, quantity: 1 }]);
+        }
+    };
+
+    const handleIncrease = (menuId) => {
+        setSelectedItems(prev =>
+            prev.map(item => item.id === menuId ? { ...item, quantity: item.quantity + 1 } : item)
+        );
+    };
+
+    const handleDecrease = (menuId) => {
+        setSelectedItems(prev =>
+            prev
+                .map(item => item.id === menuId ? { ...item, quantity: item.quantity - 1 } : item)
+                .filter(item => item.quantity > 0)
+        );
     };
 
     const handleSubmitOrder = async () => {
@@ -63,7 +90,7 @@ const MenuPage = () => {
                 menuId: item.id,
                 name: item.name,
                 price: item.price,
-                quantity: 1,
+                quantity: item.quantity,
             })),
         };
 
@@ -79,6 +106,30 @@ const MenuPage = () => {
     return (
         <div style={{ fontFamily: 'Arial, sans-serif' }}>
             <Navbar orderType={orderType} tableId={tableId} setTableId={setTableId} />
+
+            <div style={{ padding: '20px' }}>
+                <label>
+                    ประเภทการสั่ง:
+                    <select value={orderType} onChange={e => setOrderType(e.target.value)}>
+                        <option value="DINE_IN">ทานที่ร้าน</option>
+                        <option value="TAKEAWAY">สั่งกลับบ้าน</option>
+                    </select>
+                </label>
+
+                {orderType === 'DINE_IN' && (
+                    <div style={{ marginTop: '10px' }}>
+                        <label>เลือกหมายเลขโต๊ะ: </label>
+                        <select value={tableId} onChange={(e) => setTableId(e.target.value)}>
+                            <option value="">-- กรุณาเลือก --</option>
+                            {tables.map((table) => (
+                                <option key={table.id} value={table.id}>
+                                    {table.tableNumber} ({table.status})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+            </div>
 
             <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f1f2f6' }}>
                 {/* เมนูอาหาร */}
@@ -110,6 +161,8 @@ const MenuPage = () => {
                     selectedItems={selectedItems}
                     onSubmit={handleSubmitOrder}
                     orderSent={orderSent}
+                    onIncrease={handleIncrease}
+                    onDecrease={handleDecrease}
                 />
             </div>
         </div>

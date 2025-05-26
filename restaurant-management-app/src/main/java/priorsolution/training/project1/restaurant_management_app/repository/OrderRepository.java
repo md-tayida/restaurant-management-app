@@ -1,6 +1,7 @@
 package priorsolution.training.project1.restaurant_management_app.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import priorsolution.training.project1.restaurant_management_app.entity.OrderEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.TableInfoEntity;
@@ -16,7 +17,10 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     List<OrderEntity> findByTableOrderByCreatedAtDesc(TableInfoEntity table);
     List<OrderEntity> findByTableId(Long tableId);
-    List<OrderEntity> findByTableIdAndStatus(Long tableId, OrderStatusEnum status);
+    //@Query("SELECT o FROM OrderEntity o WHERE o.table.id = :tableId AND o.status = 'ACTIVE'")
+    Optional<OrderEntity> findByTableIdAndStatus(Long tableId, OrderStatusEnum status);
+
+
 
     //List<OrderEntity> findByTable_IdAndStatus(Long tableId, OrderStatusEnum status);
 }

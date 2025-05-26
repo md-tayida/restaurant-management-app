@@ -9,6 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record RegisterRequestDTO(
         @NotNull
+        @NotBlank(message = "name is required")
+        String name,
+        @NotNull
         @NotBlank(message = "Username is required")
         String username,
         @NotNull
@@ -23,11 +26,13 @@ public record RegisterRequestDTO(
 ) {
     @JsonCreator
     public RegisterRequestDTO(
+            @JsonProperty("name") String name,
             @JsonProperty("username") String username,
             @JsonProperty("password") String password,
             @JsonProperty("confirmPassword") String confirmPassword,
             @JsonProperty("role") RoleUserEnum role
     ) {
+        this.name = name;
         this.username = username;
         this.password = password;
         this.confirmPassword = confirmPassword;

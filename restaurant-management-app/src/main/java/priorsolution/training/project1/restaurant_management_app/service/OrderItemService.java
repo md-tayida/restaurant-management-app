@@ -2,10 +2,12 @@ package priorsolution.training.project1.restaurant_management_app.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import priorsolution.training.project1.restaurant_management_app.dto.MenuDTO;
 import priorsolution.training.project1.restaurant_management_app.dto.OrderItemStatusUpdateDTO;
 import priorsolution.training.project1.restaurant_management_app.entity.OrderItemEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderItemStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
+import priorsolution.training.project1.restaurant_management_app.mapper.MenuMapper;
 import priorsolution.training.project1.restaurant_management_app.mapper.OrderItemMapper;
 import priorsolution.training.project1.restaurant_management_app.repository.OrderItemRepository;
 
@@ -20,9 +22,24 @@ public class OrderItemService {
     public OrderItemService(OrderItemRepository orderItemRepository) {
         this.orderItemRepository = orderItemRepository;
     }
+    @Transactional(readOnly = true)
+    public List<OrderItemStatusUpdateDTO> getAllPreparingItems() {
+        List<OrderItemEntity> items = orderItemRepository.findAllByStatus(OrderItemStatusEnum.PREPARING);
+
+        if (items.isEmpty()) {
+            throw new ResourceNotFoundException("No preparing items found", "PREPARING_ITEMS_NOT_FOUND");
+        }
+
+        return items.stream()
+                .map(OrderItemMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+
+
 
     @Transactional(readOnly = true)
-    public List<OrderItemStatusUpdateDTO> getKitchenItemsByCategory(String categoryName) {
+    public List<OrderItemStatusUpdateDTO> getPreparingItems(String categoryName) {
         List<OrderItemEntity> items = orderItemRepository.findByMenu_Category_NameAndStatus(
                 categoryName, OrderItemStatusEnum.PREPARING
         );
@@ -59,9 +76,9 @@ public class OrderItemService {
     }
 
     @Transactional
-    public void markItemCompleted(Long id) {
-        OrderItemEntity item = orderItemRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Item not found with id: " + id, "ITEM_NOT_FOUND"));
+    public void markItemDone(Long itemId) {
+        OrderItemEntity item = orderItemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found with id: " + itemId, "ITEM_NOT_FOUND"));
 
         item.setStatus(OrderItemStatusEnum.DONE);
         orderItemRepository.save(item);

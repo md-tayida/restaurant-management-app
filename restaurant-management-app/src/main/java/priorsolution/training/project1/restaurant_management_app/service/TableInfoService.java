@@ -8,6 +8,7 @@ import priorsolution.training.project1.restaurant_management_app.dto.TableInfoDT
 import priorsolution.training.project1.restaurant_management_app.entity.TableInfoEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.exception.BadRequestException;
+import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
 import priorsolution.training.project1.restaurant_management_app.mapper.TableInfoMapper;
 import priorsolution.training.project1.restaurant_management_app.repository.TableInfoRepository;
 
@@ -21,7 +22,11 @@ public class TableInfoService {
 
     // Read all tables
     public List<TableInfoDTO> getAllTables() {
-        return tableInfoRepository.findAll().stream()
+        List<TableInfoEntity> tables = tableInfoRepository.findAllByOrderByIdAsc();
+        if (tables.isEmpty()) {
+            throw new ResourceNotFoundException("No tables found", "TABLES_NOT_FOUND");
+        }
+        return tables.stream()
                 .map(TableInfoMapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -29,7 +34,7 @@ public class TableInfoService {
     // Read table by id
     public TableInfoDTO getTableById(Long id) {
         TableInfoEntity table = tableInfoRepository.findById(id)
-                .orElseThrow(() -> new BadRequestException("Table not found", "NOT_FOUND"));
+                .orElseThrow(() -> new ResourceNotFoundException("Table with ID " + id + " not found", "TABLE_NOT_FOUND"));
         return TableInfoMapper.toDTO(table);
     }
 
@@ -39,6 +44,7 @@ public class TableInfoService {
         TableInfoEntity saved = tableInfoRepository.save(entity);
         return TableInfoMapper.toDTO(saved);
     }
+}
 
     // Update table status
 //    public TableInfoDTO updateTableStatus(Long id, TableStatusEnum status) {
@@ -79,4 +85,3 @@ public class TableInfoService {
 //    }
 //
 
-}

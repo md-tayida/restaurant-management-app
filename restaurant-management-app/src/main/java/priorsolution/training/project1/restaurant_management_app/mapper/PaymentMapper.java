@@ -1,7 +1,7 @@
 package priorsolution.training.project1.restaurant_management_app.mapper;
 
 import org.springframework.stereotype.Component;
-import priorsolution.training.project1.restaurant_management_app.dto.PaymentRequestDTO;
+//import priorsolution.training.project1.restaurant_management_app.dto.PaymentRequestDTO;
 import priorsolution.training.project1.restaurant_management_app.entity.OrderEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.PaymentEntity;
 

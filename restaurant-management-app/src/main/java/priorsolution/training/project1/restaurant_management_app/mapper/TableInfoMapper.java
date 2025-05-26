@@ -16,7 +16,7 @@ public class TableInfoMapper {
 
     public static TableInfoEntity toEntity(TableInfoDTO dto) {
         TableInfoEntity entity = new TableInfoEntity();
-        entity.setId(dto.getId());
+
         entity.setTableNumber(dto.getTableNumber());
         entity.setStatus(dto.getStatus());
         return entity;

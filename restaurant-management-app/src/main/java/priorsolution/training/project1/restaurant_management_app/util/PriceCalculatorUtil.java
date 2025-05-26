@@ -8,7 +8,8 @@ import java.util.List;
 public class PriceCalculatorUtil {
     public static BigDecimal calculateTotalPrice(List<OrderItemEntity> items) {
         return items.stream()
-                .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .map(OrderItemEntity::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
     }
 }

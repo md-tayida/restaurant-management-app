@@ -31,7 +31,7 @@ public class MenuService {
                 .collect(Collectors.toList());
 
         if (menus.isEmpty()) {
-            throw new ResourceNotFoundException("No menus found","NOT_FOUND");
+            throw new ResourceNotFoundException("No menus found","MENU_NOT_FOUND");
         }
 
         return menus;

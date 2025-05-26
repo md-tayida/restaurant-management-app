@@ -7,9 +7,11 @@ import priorsolution.training.project1.restaurant_management_app.entity.*;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderItemStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;
+import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
 import priorsolution.training.project1.restaurant_management_app.repository.MenuRepository;
 import priorsolution.training.project1.restaurant_management_app.repository.TableInfoRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,13 +24,14 @@ public class OrderMapper {
 
     public OrderEntity toEntity(OrderRequestDTO dto) {
         OrderEntity order = new OrderEntity();
+      //  order.setCreatedAt(LocalDateTime.now());
         order.setOrderType(dto.getOrderType());
         order.setStatus(OrderStatusEnum.ACTIVE);
-        order.setCreatedAt(LocalDateTime.now());
+
 
         if (dto.getTableId() != null) {
             TableInfoEntity table = tableInfoRepository.findById(dto.getTableId())
-                    .orElseThrow(() -> new RuntimeException("Table not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Table not found","NOT FOUND"));
             table.setStatus(TableStatusEnum.OCCUPIED);
             tableInfoRepository.save(table);
             order.setTable(table);
@@ -36,14 +39,12 @@ public class OrderMapper {
 
         List<OrderItemEntity> items = dto.getItems().stream().map(itemDTO -> {
             MenuEntity menu = menuRepository.findById(itemDTO.getMenuId())
-                    .orElseThrow(() -> new RuntimeException("Menu not found"));
-            return OrderItemEntity.builder()
-                    .menu(menu)
-                    .quantity(itemDTO.getQuantity())
-                    .price(menu.getPrice())
-                    .status(OrderItemStatusEnum.PREPARING)
-                    .order(order)
-                    .build();
+           .orElseThrow(() -> new ResourceNotFoundException("Menu not found","NOT FOUND"));
+//            BigDecimal itemPrice = menu.getPrice(); // ราคาต่อหน่วย
+//            int quantity = itemDTO.getQuantity();
+//            BigDecimal totalPrice = itemPrice.multiply(BigDecimal.valueOf(quantity));
+
+            return OrderItemMapper.toEntity(itemDTO, menu, order);
         }).collect(Collectors.toList());
 
         order.setOrderItems(items);

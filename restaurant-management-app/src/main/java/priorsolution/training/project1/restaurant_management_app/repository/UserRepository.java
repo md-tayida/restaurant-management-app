@@ -7,4 +7,7 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByUsername(String username);
- }
+    //List<Role> roles = RoleRepository.findAll(); // ผิด เพราะ RoleRepository เป็น class ไม่ใช่ instance
+
+
+}

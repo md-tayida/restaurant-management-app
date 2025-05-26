@@ -44,8 +44,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers("/api/**").permitAll()
-                                .requestMatchers("/api/staff/**").hasRole("STAFF")
+                                .requestMatchers("/api/user/roles").permitAll()
+                                //.requestMatchers("/api/**").permitAll()
+                                //.requestMatchers("/api/**").permitAll()
+                                .requestMatchers("/api/orderItems-status/ready-to-serve/**").hasRole("STAFF")
+                                .requestMatchers("/api/orderItems-status/preparing/**").hasRole("KITCHEN_STAFF")
 //                                .requestMatchers("/api/manager/**").hasRole("STAFF")
                                 .requestMatchers("/api/manager/**").hasRole("MANAGER")
 //                        .requestMatchers("/api/chasier/**").hasAuthority("ROLE_CASHIER")
@@ -61,7 +64,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

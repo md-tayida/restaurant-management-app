@@ -14,7 +14,10 @@ import java.util.Optional;
 
 @Repository
 public interface TableInfoRepository extends JpaRepository<TableInfoEntity, Long> {
-    Optional<TableInfoEntity> findByTableNumber(String tableNumber);
+    //@Query(value = "SELECT * FROM table_info ORDER BY CAST(SUBSTRING(table_number, 2) AS UNSIGNED)", nativeQuery = true)
+  //  List<TableInfoEntity> findAllOrderByTableNumberNumeric();
+    List<TableInfoEntity> findAllByOrderByIdAsc();
+
     List<TableInfoEntity> findByStatus(TableStatusEnum status);
     @Query("SELECT t FROM TableInfoEntity t LEFT JOIN FETCH t.orders o LEFT JOIN FETCH o.orderItems WHERE t.id = :id")
     Optional<TableInfoEntity> findWithOrdersAndItemsById(@Param("id") Long id);

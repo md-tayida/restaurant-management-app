@@ -1,15 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 export default function ManagerHelloPage() {
     const [message, setMessage] = useState('');
 
     useEffect(() => {
-        axios.get('http://localhost:8090/api/manager/hello')
-            .then(res => {
-                setMessage(res.data);
-            })
+        const token = localStorage.getItem('token');
+        axios.get('http://localhost:8090/api/manager/hello', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        })
+            .then(res => setMessage(res.data))
             .catch(err => {
+                console.error(err);
                 setMessage('Error fetching data');
             });
     }, []);

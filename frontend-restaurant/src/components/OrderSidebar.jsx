@@ -1,5 +1,5 @@
-const OrderSidebar = ({ selectedItems, onSubmit, orderSent }) => {
-    const total = selectedItems.reduce((sum, item) => sum + item.price, 0);
+const OrderSidebar = ({ selectedItems, onSubmit, orderSent, onIncrease, onDecrease }) => {
+    const total = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     return (
         <div style={{
@@ -16,10 +16,26 @@ const OrderSidebar = ({ selectedItems, onSubmit, orderSent }) => {
                 {selectedItems.length === 0 ? (
                     <p>ยังไม่มีรายการที่เลือก</p>
                 ) : (
-                    <ul style={{ paddingLeft: '20px' }}>
-                        {selectedItems.map((item, index) => (
-                            <li key={index} style={{ marginBottom: '6px', color: '#2d3436' }}>
-                                {item.name} - {item.price} บาท
+                    <ul style={{ paddingLeft: '0', listStyle: 'none' }}>
+                        {selectedItems.map((item) => (
+                            <li key={item.id} style={{
+                                marginBottom: '15px',
+                                paddingBottom: '10px',
+                                borderBottom: '1px solid #b2bec3',
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <strong>{item.name}</strong><br />
+                                        <span style={{ color: '#636e72' }}>
+                                            {item.quantity} x {item.price} บาท = {item.price * item.quantity} บาท
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <button onClick={() => onDecrease(item.id)} style={btnStyle}>−</button>
+                                        <span style={{ margin: '0 10px' }}>{item.quantity}</span>
+                                        <button onClick={() => onIncrease(item.id)} style={btnStyle}>+</button>
+                                    </div>
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -68,6 +84,16 @@ const OrderSidebar = ({ selectedItems, onSubmit, orderSent }) => {
             )}
         </div>
     );
+};
+
+const btnStyle = {
+    padding: '4px 10px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    borderRadius: '6px',
+    border: '1px solid #ccc',
+    backgroundColor: '#fff',
+    cursor: 'pointer',
 };
 
 export default OrderSidebar;
