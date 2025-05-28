@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import priorsolution.training.project1.restaurant_management_app.dto.TableInfoDTO;
 //import priorsolution.training.project1.restaurant_management_app.dto.TableWithOrdersDTO;
 import priorsolution.training.project1.restaurant_management_app.entity.TableInfoEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;

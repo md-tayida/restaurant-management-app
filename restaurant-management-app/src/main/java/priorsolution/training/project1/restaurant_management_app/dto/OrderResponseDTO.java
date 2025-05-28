@@ -1,7 +1,9 @@
 package priorsolution.training.project1.restaurant_management_app.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderTypeEnum;
 
@@ -11,6 +13,8 @@ import java.util.List;
 
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class OrderResponseDTO {
     private Long id;
     private OrderTypeEnum orderType;

@@ -7,9 +7,13 @@ import java.util.List;
 
 public class PriceCalculatorUtil {
     public static BigDecimal calculateTotalPrice(List<OrderItemEntity> items) {
+        if (items == null || items.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
         return items.stream()
-                .map(OrderItemEntity::getPrice)
+                .map(item -> item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
     }
+
+
 }

@@ -1,19 +1,13 @@
 package priorsolution.training.project1.restaurant_management_app.service;
 
 
-
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.security.core.userdetails.UserDetails;
+
 import org.springframework.stereotype.Service;
 import priorsolution.training.project1.restaurant_management_app.entity.UserEntity;
 import priorsolution.training.project1.restaurant_management_app.exception.UnauthorizedException;
-
-
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.util.Date;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -30,12 +24,16 @@ public class JwtService {
     }
 
     public String generateToken(UserEntity user) {
+        if (user == null || user.getUsername() == null || user.getRole() == null) {
+            throw new UnauthorizedException("Failed to generate JWT token", "JWT_GENERATION_ERROR");
+        }
+
         try {
             return Jwts.builder()
                     .setSubject(user.getUsername())
                     .claim("role", user.getRole().name())
                     .setIssuedAt(new Date())
-                    .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 ชั่วโมง
+                    .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                     .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                     .compact();
         } catch (Exception e) {
@@ -43,13 +41,19 @@ public class JwtService {
         }
     }
 
+
     public String extractUsername(String token) {
         try {
-            return extractAllClaims(token).getSubject();
+            String subject = extractAllClaims(token).getSubject();
+            if (subject == null) {
+                throw new UnauthorizedException("Invalid JWT token", "INVALID_JWT_TOKEN");
+            }
+            return subject;
         } catch (JwtException | IllegalArgumentException e) {
             throw new UnauthorizedException("Invalid JWT token", "INVALID_JWT_TOKEN");
         }
     }
+
 
     public Claims extractAllClaims(String token) {
         try {
@@ -73,4 +77,6 @@ public class JwtService {
             return true;
         }
     }
+
+
 }

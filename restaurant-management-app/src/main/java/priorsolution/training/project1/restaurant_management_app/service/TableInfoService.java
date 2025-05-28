@@ -1,13 +1,14 @@
 package priorsolution.training.project1.restaurant_management_app.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 //import org.springframework.web.server.ResponseStatusException;
+import priorsolution.training.project1.restaurant_management_app.dto.MenuStatusRequestDTO;
 import priorsolution.training.project1.restaurant_management_app.dto.TableInfoDTO;
+import priorsolution.training.project1.restaurant_management_app.dto.TableInfoStatusRequestDTO;
+import priorsolution.training.project1.restaurant_management_app.entity.MenuEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.TableInfoEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;
-import priorsolution.training.project1.restaurant_management_app.exception.BadRequestException;
 import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
 import priorsolution.training.project1.restaurant_management_app.mapper.TableInfoMapper;
 import priorsolution.training.project1.restaurant_management_app.repository.TableInfoRepository;
@@ -39,49 +40,62 @@ public class TableInfoService {
     }
 
     // Create new table
+    // Create new table
     public TableInfoDTO createTable(TableInfoDTO dto) {
         TableInfoEntity entity = TableInfoMapper.toEntity(dto);
+        entity.setStatus(TableStatusEnum.AVAILABLE); // ตั้งค่า default เป็น AVAILABLE
         TableInfoEntity saved = tableInfoRepository.save(entity);
         return TableInfoMapper.toDTO(saved);
     }
+
+    // Delete table by ID
+    public void deleteTable(Long id) {
+        if (!tableInfoRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Table with ID " + id + " not found", "TABLE_NOT_FOUND");
+        }
+        tableInfoRepository.deleteById(id);
+    }
+
+
+    public TableInfoStatusRequestDTO updateTableStatus(Long id, TableInfoStatusRequestDTO dto) {
+        if (dto.getStatus() == null) {
+            throw new IllegalArgumentException("Status must not be null");
+        }
+
+        TableInfoEntity entity = tableInfoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found", "TABLE_NOT_FOUND"));
+
+        entity.setStatus(dto.getStatus());
+
+        TableInfoEntity updated = tableInfoRepository.save(entity);
+        TableInfoStatusRequestDTO response = new TableInfoStatusRequestDTO();
+        response.setStatus(updated.getStatus());
+        return response;
+    }
+
+    /// 5hk สร้าง order ใหม่ จะเปลี่ยนสถานะ table to OCCUPIED
+
+    public void setTableStatus(Long id, TableStatusEnum status) {
+        if (status == null) {
+            throw new IllegalArgumentException("Status must not be null");
+        }
+
+        TableInfoEntity entity = tableInfoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found", "TABLE_NOT_FOUND"));
+
+        entity.setStatus(status);
+        tableInfoRepository.save(entity);
+    }
+
+    /// ///////เอาไว้ ภายใน backend ใช้ร่วมกับ setTableStatus
+    public TableInfoEntity getEntityById(Long id) {
+        return tableInfoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found", "NOT_FOUND"));
+    }
+
+
 }
 
-    // Update table status
-//    public TableInfoDTO updateTableStatus(Long id, TableStatusEnum status) {
-//        TableInfoEntity table = tableInfoRepository.findById(id)
-//                .orElseThrow(() -> new BadRequestException("Table not found", "NOT_FOUND"));
-//        table.setStatus(status);
-//        TableInfoEntity updated = tableInfoRepository.save(table);
-//        return TableInfoMapper.toDTO(updated);
-//    }
 
-    // Update table info (general)
-//    public TableInfoDTO updateTable(Long id, TableInfoDTO dto) {
-//        TableInfoEntity table = tableInfoRepository.findById(id)
-//                .orElseThrow(() -> new BadRequestException("Table not found", "NOT_FOUND"));
-//
-//        // อัปเดตฟิลด์ที่ต้องการ เช่น tableNumber, status (ถ้าอยากให้แก้ได้)
-//        table.setTableNumber(dto.getTableNumber());
-//        table.setStatus(dto.getStatus());
-//
-//        TableInfoEntity updated = tableInfoRepository.save(table);
-//        return TableInfoMapper.toDTO(updated);
-//    }
-//
-//    // Delete table by id
-//    public void deleteTable(Long id) {
-//        if (!tableInfoRepository.existsById(id)) {
-//              throw  new BadRequestException("Table not found", "NOT_FOUND");
-//        }
-//        tableInfoRepository.deleteById(id);
-//    }
-//
-//    // Custom: Get all occupied tables
-//    public List<TableInfoDTO> getOccupiedTables() {
-//        return tableInfoRepository.findByStatus(TableStatusEnum.OCCUPIED)
-//                .stream()
-//                .map(TableInfoMapper::toDTO)
-//                .collect(Collectors.toList());
-//    }
 //
 

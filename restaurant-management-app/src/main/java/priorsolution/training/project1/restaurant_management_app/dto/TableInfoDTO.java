@@ -3,14 +3,11 @@ package priorsolution.training.project1.restaurant_management_app.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import jdk.jshell.Snippet;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;
-
-import java.util.List;
 
 @Data
 @Builder
