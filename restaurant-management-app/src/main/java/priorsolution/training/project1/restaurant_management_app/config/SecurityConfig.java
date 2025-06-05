@@ -17,6 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import priorsolution.training.project1.restaurant_management_app.security.CustomAccessDeniedHandler;
+import priorsolution.training.project1.restaurant_management_app.security.CustomAuthenticationEntryPoint;
 import priorsolution.training.project1.restaurant_management_app.security.JwtAuthFilter;
 import priorsolution.training.project1.restaurant_management_app.service.CustomUserDetailsService;
 
@@ -31,10 +33,19 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final CustomUserDetailsService customUserDetailsService;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, CustomUserDetailsService customUserDetailsService) {
+    private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
+                          CustomUserDetailsService customUserDetailsService,
+                          CustomAccessDeniedHandler accessDeniedHandler,
+                          CustomAuthenticationEntryPoint authenticationEntryPoint) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.customUserDetailsService = customUserDetailsService;
+        this.accessDeniedHandler = accessDeniedHandler;
+        this.authenticationEntryPoint = authenticationEntryPoint;
     }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,17 +53,17 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint) // 401
+                        .accessDeniedHandler(accessDeniedHandler)           // 403
+                )
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers("/api/user/roles").permitAll()
-                                //.requestMatchers("/api/**").permitAll()
-                                //.requestMatchers("/api/**").permitAll()
-                                .requestMatchers("/api/orderItems-status/ready-to-serve/**").hasRole("STAFF")
-                                .requestMatchers("/api/orderItems-status/preparing/**").hasRole("KITCHEN_STAFF")
-//                                .requestMatchers("/api/manager/**").hasRole("STAFF")
-                                .requestMatchers("/api/manager/**").hasRole("MANAGER")
-//                        .requestMatchers("/api/chasier/**").hasAuthority("ROLE_CASHIER")
-                                .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/user/roles").permitAll()
+//                        .requestMatchers("/api/orderItems-status/ready-to-serve/**").hasRole("STAFF")
+//                        .requestMatchers("/api/orderItems-status/preparing/**").hasRole("KITCHEN_STAFF")
+                        .requestMatchers("/api/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

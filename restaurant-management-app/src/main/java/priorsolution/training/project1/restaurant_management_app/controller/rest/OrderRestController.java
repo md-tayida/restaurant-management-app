@@ -2,14 +2,11 @@ package priorsolution.training.project1.restaurant_management_app.controller.res
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import priorsolution.training.project1.restaurant_management_app.dto.MenuDTO;
 import priorsolution.training.project1.restaurant_management_app.dto.OrderRequestDTO;
 
 import priorsolution.training.project1.restaurant_management_app.dto.OrderResponseDTO;
-import priorsolution.training.project1.restaurant_management_app.entity.OrderEntity;
 
 import priorsolution.training.project1.restaurant_management_app.service.OrderService;
 
@@ -37,9 +34,16 @@ public class OrderRestController {
                 .body(responseDTO);
     }
 
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<OrderResponseDTO> cancelOrder(@PathVariable Long orderId) {
+        OrderResponseDTO canceled = orderService.cancelOrder(orderId);
+        return ResponseEntity.ok(canceled);
+    }
 
-
-
+    @PostMapping("/{orderId}/pay")
+    public OrderResponseDTO payOrder(@PathVariable Long orderId) {
+        return orderService.payOrder(orderId);
+    }
 
 
 

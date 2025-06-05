@@ -2,12 +2,10 @@ package priorsolution.training.project1.restaurant_management_app.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import priorsolution.training.project1.restaurant_management_app.dto.MenuDTO;
 import priorsolution.training.project1.restaurant_management_app.dto.OrderItemStatusUpdateDTO;
 import priorsolution.training.project1.restaurant_management_app.entity.OrderItemEntity;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderItemStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
-import priorsolution.training.project1.restaurant_management_app.mapper.MenuMapper;
 import priorsolution.training.project1.restaurant_management_app.mapper.OrderItemMapper;
 import priorsolution.training.project1.restaurant_management_app.repository.OrderItemRepository;
 
@@ -18,9 +16,10 @@ import java.util.stream.Collectors;
 public class OrderItemService {
 
     private final OrderItemRepository orderItemRepository;
-
-    public OrderItemService(OrderItemRepository orderItemRepository) {
+private final OrderService orderService;
+    public OrderItemService(OrderItemRepository orderItemRepository, OrderService orderService) {
         this.orderItemRepository = orderItemRepository;
+        this.orderService = orderService;
     }
     @Transactional(readOnly = true)
     public List<OrderItemStatusUpdateDTO> getAllPreparingItems() {
@@ -39,7 +38,7 @@ public class OrderItemService {
 
 
     @Transactional(readOnly = true)
-    public List<OrderItemStatusUpdateDTO> getPreparingItems(String categoryName) {
+    public List<OrderItemStatusUpdateDTO> getAllPreparingItems(String categoryName) {
         List<OrderItemEntity> items = orderItemRepository.findByMenu_Category_NameAndStatus(
                 categoryName, OrderItemStatusEnum.PREPARING
         );
@@ -83,4 +82,29 @@ public class OrderItemService {
         item.setStatus(OrderItemStatusEnum.DONE);
         orderItemRepository.save(item);
     }
+
+
+    @Transactional
+    public void cancelOrderItem(Long itemId) {
+
+        OrderItemEntity item = orderItemRepository.findById(itemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Item not found", "ITEM_NOT_FOUND"));
+
+        // ✅ เช็คสถานะก่อนว่า cancel ได้ไหม
+        if (item.getStatus() == OrderItemStatusEnum.CANCELED) {
+            throw new IllegalStateException("Cannot cancel item that is already canceled");
+        }
+
+        item.setStatus(OrderItemStatusEnum.CANCELED);
+        orderItemRepository.save(item);
+
+        // ✅ เช็คว่า order ไม่ null ก่อนเรียก service
+        if (item.getOrder() == null) {
+            throw new IllegalStateException("Order reference is null for item id: " + itemId);
+        }
+
+        orderService.recalculateTotalPrice(item.getOrder().getId());
+    }
+
+
 }

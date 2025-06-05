@@ -33,8 +33,7 @@ public class AuthRestController {
     private final AuthenticationManager authManager;
     private final CustomUserDetailsService userDetailsService;
 //    private final JwtUtil jwtUtil;
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
+
     private final UserService userService;
 
 

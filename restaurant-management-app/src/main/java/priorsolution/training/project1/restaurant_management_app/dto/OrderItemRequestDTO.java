@@ -4,12 +4,18 @@ package priorsolution.training.project1.restaurant_management_app.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class OrderItemRequestDTO {
     @NotNull(message = "Menu ID must not be null")
     private Long menuId;

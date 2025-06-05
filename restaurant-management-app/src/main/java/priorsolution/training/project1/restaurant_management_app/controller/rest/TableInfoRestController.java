@@ -5,9 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import priorsolution.training.project1.restaurant_management_app.dto.MenuStatusRequestDTO;
 import priorsolution.training.project1.restaurant_management_app.dto.TableInfoDTO;
 
-import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;
+import priorsolution.training.project1.restaurant_management_app.dto.TableInfoStatusRequestDTO;
+import priorsolution.training.project1.restaurant_management_app.entity.MenuEntity;
+import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
 import priorsolution.training.project1.restaurant_management_app.service.TableInfoService;
 import priorsolution.training.project1.restaurant_management_app.service.OrderService;
 
@@ -42,6 +45,19 @@ public class TableInfoRestController {
         log.info("API POST /api/tables called");
         TableInfoDTO created = tableInfoService.createTable(dto);
         return ResponseEntity.status(201).body(created);
+    }
+    // DELETE /tables/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTable(@PathVariable Long id) {
+        tableInfoService.deleteTable(id);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<TableInfoStatusRequestDTO> updateTableStatus(@PathVariable Long id,
+                                                                 @Valid @RequestBody TableInfoStatusRequestDTO dto) {
+        TableInfoStatusRequestDTO updated = tableInfoService.updateTableStatus(id, dto);
+        return ResponseEntity.ok(updated); // 200 OK
     }
 
 //    // Update table general info

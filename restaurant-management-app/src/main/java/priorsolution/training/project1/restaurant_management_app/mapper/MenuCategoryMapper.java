@@ -1,9 +1,7 @@
 package priorsolution.training.project1.restaurant_management_app.mapper;
 
 import priorsolution.training.project1.restaurant_management_app.dto.MenuCategoryResponseDTO;
-import priorsolution.training.project1.restaurant_management_app.dto.TableInfoDTO;
 import priorsolution.training.project1.restaurant_management_app.entity.MenuCategoryEntity;
-import priorsolution.training.project1.restaurant_management_app.entity.TableInfoEntity;
 
 public class MenuCategoryMapper
 {

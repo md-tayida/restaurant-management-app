@@ -1,33 +1,30 @@
 package priorsolution.training.project1.restaurant_management_app.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import priorsolution.training.project1.restaurant_management_app.exception.UnauthorizedException;
-import priorsolution.training.project1.restaurant_management_app.exception.ForbiddenException;
 import priorsolution.training.project1.restaurant_management_app.service.JwtService;
-import priorsolution.training.project1.restaurant_management_app.service.CustomUserDetailsService;
 
 import java.io.IOException;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public JwtAuthFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-
     }
 
     @Override
@@ -39,38 +36,64 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
-            return; // ไม่บังคับ auth → ปล่อยผ่าน endpoint ไปเช่น public route
+            return;
         }
 
         final String token = authHeader.substring(7);
-
         String username;
+
         try {
             username = jwtService.extractUsername(token);
-        } catch (Exception e) {
-            throw new UnauthorizedException("Invalid JWT token", "ERR_INVALID_TOKEN");
-        }
+            if (username == null) {
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "ERR_USERNAME_MISSING", "Token does not contain username");
+                return;
+            }
 
-        if (username == null) {
-            throw new UnauthorizedException("Token does not contain username", "ERR_USERNAME_MISSING");
+            // 🔒 ตรวจสอบว่า token หมดอายุหรือยัง
+            if (jwtService.isTokenExpired(token)) {
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "ERR_TOKEN_EXPIRED", "JWT token is expired");
+                return;
+            }
+
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "ERR_INVALID_TOKEN", "Invalid JWT token");
+            return;
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            String role;
             try {
-                role = jwtService.extractAllClaims(token).get("role", String.class);
+                String roleStr = jwtService.extractAllClaims(token).get("role", String.class);
+
+                List<SimpleGrantedAuthority> authorities = Arrays.stream(roleStr.split(","))
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.trim()))
+                        .toList();
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+
             } catch (Exception e) {
-                throw new ForbiddenException("Unable to extract role from token", "ERR_ROLE_INVALID");
+                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "ERR_ROLE_INVALID", "Unable to extract role from token");
+                return;
             }
-
-            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authToken);
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String errorCode, String message) throws IOException {
+        if (response.isCommitted()) return;
+
+        response.setStatus(status);
+        response.setContentType("application/json");
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status);
+        body.put("errorCode", errorCode);
+        body.put("message", message);
+
+        objectMapper.writeValue(response.getWriter(), body);
     }
 }

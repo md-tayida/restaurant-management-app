@@ -8,7 +8,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class MenuDTO {
+public class MenuResponseDTO {
     private Long id;
     @NotBlank(message = "Menu name is required")
     private String name;

@@ -4,15 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import priorsolution.training.project1.restaurant_management_app.dto.*;
 import priorsolution.training.project1.restaurant_management_app.entity.*;
-import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderItemStatusEnum;
+
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderStatusEnum;
-import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;
+
 import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
 import priorsolution.training.project1.restaurant_management_app.repository.MenuRepository;
-import priorsolution.training.project1.restaurant_management_app.repository.TableInfoRepository;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import priorsolution.training.project1.restaurant_management_app.service.TableInfoService;
+
 import java.util.List;
 import java.util.stream.Collectors;
 @Component
@@ -20,7 +19,8 @@ import java.util.stream.Collectors;
 public class OrderMapper {
 
     private final MenuRepository menuRepository;
-    private final TableInfoRepository tableInfoRepository;
+    private final TableInfoService tableInfoService;
+
 
     public OrderEntity toEntity(OrderRequestDTO dto) {
         OrderEntity order = new OrderEntity();
@@ -28,14 +28,11 @@ public class OrderMapper {
         order.setOrderType(dto.getOrderType());
         order.setStatus(OrderStatusEnum.ACTIVE);
 
-
         if (dto.getTableId() != null) {
-            TableInfoEntity table = tableInfoRepository.findById(dto.getTableId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Table not found","NOT FOUND"));
-            table.setStatus(TableStatusEnum.OCCUPIED);
-            tableInfoRepository.save(table);
+            TableInfoEntity table = tableInfoService.getEntityById(dto.getTableId());
             order.setTable(table);
         }
+
 
         List<OrderItemEntity> items = dto.getItems().stream().map(itemDTO -> {
             MenuEntity menu = menuRepository.findById(itemDTO.getMenuId())
