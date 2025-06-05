@@ -34,7 +34,7 @@ public class OrderItemMapper {
                 .menuName(item.getMenu().getName())
                 .createTime(item.getCreatedAt())
                 .quantity(item.getQuantity())
-                .status(item.getStatus().name())
+                .status(item.getStatus())
                 .tableNumber(item.getOrder().getTable() != null
                         ? item.getOrder().getTable().getTableNumber()
                         : "Takeaway")

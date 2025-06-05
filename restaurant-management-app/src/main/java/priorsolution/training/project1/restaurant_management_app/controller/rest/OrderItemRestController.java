@@ -1,6 +1,7 @@
 package priorsolution.training.project1.restaurant_management_app.controller.rest;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 //import priorsolution.training.project1.restaurant_management_app.dto.KitchenItemDTO;
@@ -14,16 +15,23 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/orderItems-status")
 @RequiredArgsConstructor
-public class OrderItemStatusRestController {
+public class OrderItemRestController {
 
     private final OrderItemService orderItemService;
 
 
-    @GetMapping("/preparing/all")
+    @GetMapping("/preparing")
     public List<OrderItemStatusUpdateDTO> getAllPreparingItems() {
         return orderItemService.getAllPreparingItems();
     }
 
+    /**
+     * Get all items that are currently being prepared for a specific category
+     */
+    @GetMapping("/preparing/{category}")
+    public List<OrderItemStatusUpdateDTO> getAllPreparingItemsByCategory(@PathVariable String category) {
+        return orderItemService.getAllPreparingItems(category);
+    }
 
 
     @PatchMapping("/preparing/{category}/{id}")
@@ -46,4 +54,11 @@ public class OrderItemStatusRestController {
 
         return orderItemService.getReadyToServeItems();
     }
+
+    @PutMapping("/{itemId}/cancel")
+    public ResponseEntity<String> cancelOrderItem(@PathVariable Long itemId) {
+        orderItemService.cancelOrderItem(itemId);
+        return ResponseEntity.ok("Order item canceled successfully");
+    }
+
 }

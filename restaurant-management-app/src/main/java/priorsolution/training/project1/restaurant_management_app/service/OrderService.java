@@ -11,6 +11,7 @@ import priorsolution.training.project1.restaurant_management_app.entity.*;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderItemStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.entity.enums.OrderTypeEnum;
+import priorsolution.training.project1.restaurant_management_app.entity.enums.TableStatusEnum;
 import priorsolution.training.project1.restaurant_management_app.exception.BadRequestException;
 import priorsolution.training.project1.restaurant_management_app.exception.ResourceNotFoundException;
 import priorsolution.training.project1.restaurant_management_app.mapper.MenuMapper;
@@ -31,10 +32,10 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final TableInfoRepository tableInfoRepository;
     private final MenuRepository menuRepository;
     private final OrderMapper orderMapper;
-    //   private final OrderItemRepository orderItemRepository;
+    private final TableInfoService tableInfoService;
+
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO dto) {
         if (dto == null || dto.getItems() == null || dto.getItems().isEmpty()) {
@@ -43,21 +44,20 @@ public class OrderService {
 
         OrderEntity order;
 
-        // เช็กเฉพาะกรณี DINE_IN เท่านั้น
+        // กรณี DINE_IN
         if (dto.getOrderType() == OrderTypeEnum.DINE_IN) {
             if (dto.getTableId() == null) {
                 throw new BadRequestException("Table ID is required for dine-in orders", "TABLE_ID_REQUIRED");
             }
 
-            // ตรวจสอบว่าโต๊ะนี้มีออเดอร์ ACTIVE อยู่หรือไม่
+            // เช็กว่าโต๊ะมีออเดอร์ ACTIVE หรือไม่
             Optional<OrderEntity> existingOrderOpt = orderRepository
                     .findByTableIdAndStatus(dto.getTableId(), OrderStatusEnum.ACTIVE);
 
             if (existingOrderOpt.isPresent()) {
-                // โต๊ะมีออเดอร์ ACTIVE → update
+                // เพิ่มเมนูเข้าออเดอร์เดิม
                 order = existingOrderOpt.get();
 
-                // เพิ่ม items ใหม่เข้าไป
                 List<OrderItemEntity> newItems = dto.getItems().stream().map(itemDTO -> {
                     MenuEntity menu = menuRepository.findById(itemDTO.getMenuId())
                             .orElseThrow(() -> new ResourceNotFoundException("Menu with ID " + itemDTO.getMenuId() + " not found", "MENU_NOT_FOUND"));
@@ -65,26 +65,26 @@ public class OrderService {
                 }).collect(Collectors.toList());
 
                 order.getOrderItems().addAll(newItems);
-
-                // คำนวณราคาทั้งหมดใหม่
-                BigDecimal total = PriceCalculatorUtil.calculateTotalPrice(order.getOrderItems());
-                order.setTotalPrice(total);
+                order.setTotalPrice(PriceCalculatorUtil.calculateTotalPrice(order.getOrderItems()));
             } else {
-                // โต๊ะไม่มีออเดอร์ → สร้างใหม่
+                // ไม่มีออเดอร์ ACTIVE → สร้างใหม่
                 order = orderMapper.toEntity(dto);
 
+                tableInfoService.setTableStatus(dto.getTableId(), TableStatusEnum.OCCUPIED);
+
                 for (OrderItemEntity item : order.getOrderItems()) {
-                    // validate ว่าเมนูมีจริง
                     menuRepository.findById(item.getMenu().getId())
                             .orElseThrow(() -> new ResourceNotFoundException("Menu with ID " + item.getMenu().getId() + " not found", "MENU_NOT_FOUND"));
                 }
 
-                BigDecimal total = PriceCalculatorUtil.calculateTotalPrice(order.getOrderItems());
-                order.setTotalPrice(total);
+                order.setTotalPrice(PriceCalculatorUtil.calculateTotalPrice(order.getOrderItems()));
+
+                // เปลี่ยนสถานะโต๊ะเป็น OCCUPIED
+                tableInfoService.setTableStatus(dto.getTableId(), TableStatusEnum.OCCUPIED);
             }
 
         } else {
-            // takeaway → สร้างใหม่
+            // กรณี TAKEAWAY
             order = orderMapper.toEntity(dto);
 
             for (OrderItemEntity item : order.getOrderItems()) {
@@ -92,8 +92,7 @@ public class OrderService {
                         .orElseThrow(() -> new ResourceNotFoundException("Menu with ID " + item.getMenu().getId() + " not found", "MENU_NOT_FOUND"));
             }
 
-            BigDecimal total = PriceCalculatorUtil.calculateTotalPrice(order.getOrderItems());
-            order.setTotalPrice(total);
+            order.setTotalPrice(PriceCalculatorUtil.calculateTotalPrice(order.getOrderItems()));
         }
 
         OrderEntity saved = orderRepository.save(order);
@@ -102,14 +101,84 @@ public class OrderService {
 
     public List<OrderResponseDTO> getAllOrders() {
         List<OrderEntity> orders = orderRepository.findAll();
-        if (orders.isEmpty()) {
-            throw new ResourceNotFoundException("No orders found", "ORDERS_NOT_FOUND");
-        }
+
         return orders.stream()
                 .map(orderMapper::toDto)
                 .collect(Collectors.toList());
     }
 
+    /// /*************
+    @Transactional
+    public OrderResponseDTO payOrder(Long orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order with ID " + orderId + " not found", "ORDER_NOT_FOUND"));
 
+        if (order.getStatus() != OrderStatusEnum.ACTIVE) {
+            throw new BadRequestException("Order must be in ACTIVE status to be paid", "INVALID_ORDER_STATUS");
+        }
+
+        // ตรวจสอบว่าเมนูทั้งหมด DONE แล้วหรือยัง
+        List<OrderItemEntity> unfinishedItems = order.getOrderItems().stream()
+                .filter(item -> item.getStatus() != OrderItemStatusEnum.DONE)
+                .collect(Collectors.toList());
+
+        if (!unfinishedItems.isEmpty()) {
+            String itemNames = unfinishedItems.stream()
+                    .map(item -> item.getMenu().getName()) // สมมุติว่า MenuEntity มี .getName()
+                    .collect(Collectors.joining(", "));
+
+            throw new BadRequestException(
+                    "Cannot complete payment. The following items are not yet done: " + itemNames,
+                    "ORDER_ITEMS_NOT_DONE"
+            );
+        }
+
+        order.setStatus(OrderStatusEnum.PAID);
+        OrderEntity savedOrder = orderRepository.save(order);
+
+        if (order.getOrderType() == OrderTypeEnum.DINE_IN && order.getTable() != null) {
+            tableInfoService.setTableStatus(order.getTable().getId(), TableStatusEnum.AVAILABLE);
+        }
+
+        return orderMapper.toDto(savedOrder);
+    }
+
+    ///
+    ///
+
+    @Transactional
+    public OrderResponseDTO cancelOrder(Long orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order with ID " + orderId + " not found", "ORDER_NOT_FOUND"));
+
+        if (order.getStatus() == OrderStatusEnum.PAID || order.getStatus() == OrderStatusEnum.CANCELED) {
+            throw new BadRequestException("Order is already completed or canceled", "CANNOT_CANCEL");
+        }
+
+        order.setStatus(OrderStatusEnum.CANCELED);
+        OrderEntity savedOrder = orderRepository.save(order);
+
+        // เปลี่ยนสถานะโต๊ะเป็น AVAILABLE หากเป็น DINE_IN
+        if (order.getOrderType() == OrderTypeEnum.DINE_IN && order.getTable() != null) {
+            tableInfoService.setTableStatus(order.getTable().getId(), TableStatusEnum.AVAILABLE);
+        }
+
+        return orderMapper.toDto(savedOrder);
+    }
+
+    @Transactional
+    public void recalculateTotalPrice(Long orderId) {
+        OrderEntity order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found", "ORDER_NOT_FOUND"));
+
+        BigDecimal newTotal = PriceCalculatorUtil.calculateTotalPrice(
+                order.getOrderItems().stream()
+                        .filter(item -> item.getStatus() != OrderItemStatusEnum.CANCELED) // ไม่รวมรายการที่ถูกยกเลิก
+                        .collect(Collectors.toList())
+        );
+
+        order.setTotalPrice(newTotal);
+        orderRepository.save(order);
+    }
 
 }
