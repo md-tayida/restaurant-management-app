@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+.test {
+    /* border-color: var(--color-orange-900); */
+    border-width: 2px;
+    /* border-color: #4caf50; */
+    padding: 20px;
+    border-radius: 12px;
+    /* background-color: #4caf50; */
+
+}
+
+.nav {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    background: #f8f8f8;
+    padding: 10px;
+}
+
+.nav a {
+    text-decoration: none;
+    color: #333;
+}
+
+/* สีหลัก */
+:root {
+    --primary-color: #FF6B35;
+    /* ส้ม/แดง กระตุ้นความอยากอาหาร */
+    --secondary-color: #FFA94D;
+    /* ส้มอ่อน สำหรับเน้น UI */
+    --accent-color: #FFC93C;
+    /* เหลือง สำหรับปุ่มสำคัญ/Alert */
+
+    /* สีพื้นหลัง */
+    --bg-color: #F5F5F5;
+    /* ขาวอมเทา สบายตา */
+    --card-bg-color: #FFFFFF;
+    /* พื้นของ Card/Table */
+
+    /* สีข้อความ */
+    --text-color: #333333;
+    /* สีข้อความหลัก */
+    --text-muted: #777777;
+    /* สีข้อความรอง */
+
+    /* สถานะโต๊ะ */
+    --table-available: #8AC926;
+    /* เขียวอ่อน โต๊ะว่าง */
+    --table-occupied: #FF6B35;
+    /* แดง/ส้ม โต๊ะกำลังใช้งาน */
+    --table-paid: #6C757D;
+    /* เทา โต๊ะชำระแล้ว */
+}

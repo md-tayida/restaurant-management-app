@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+.test {
+    /* border-color: var(--color-orange-900); */
+    border-width: 2px;
+    /* border-color: #4caf50; */
+    padding: 20px;
+    border-radius: 12px;
+    height: auto;
+    /* background-color: #4caf50; */
+
+}
